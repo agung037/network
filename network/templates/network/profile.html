@@ -1,0 +1,299 @@
+{% extends "network/layout.html" %} {% block body %}
+<div class="profile mt-4">
+  <div class="d-flex justify-content-center">
+    <div class="card">
+      <img
+        class="mb-2"
+        src="{{user.avatar}}"
+        alt="Avatar"
+        style="width: 100%"
+      />
+      <div class="container">
+        <h4>
+          <b>{{user.firstName}} {{user.lastName}} {% if request.user == user %} (you) {% endif %} |</b>
+          <em>@{{user.username}}</em>
+          {% if request.user.username %}
+          {% if request.user != user %}
+            {% if user in current_user_follow.following.all %}
+              <button id="unfollow" value="{{user}}" class="btn btn-sm btn-danger">unfollow</button>
+              <button id="follow-button" value={{user}} class="btn btn-sm btn-info" hidden>follow</button>
+            {% else %}
+            <button id="unfollow" value="{{user}}" class="btn btn-sm btn-danger" hidden>unfollow</button>
+            <button id="follow-button" value={{user}} class="btn btn-sm btn-info">follow</button>
+            {% endif %}
+          {% endif %}
+          {% endif %}
+        </h4>
+        <p>{{user.job}}</p>
+        <blockquote class="blockquote text-center">
+          <p class="mb-0">{{user.about}}</p>
+        </blockquote>
+      </div>
+    </div>
+  </div>
+  <div class="d-flex justify-content-center">
+    <div class="card mt-1">
+      <h3>Education : {{user.education}}</h3>
+    </div>
+  </div>
+  <div class="d-flex justify-content-center">
+    <div class="card mt-1">
+      <h3><a href="" data-toggle="modal" data-target="#followingsModal"> Following ({{followings_list.following.all.count}})</a> :
+          
+      {% for f in followings_list.following.all|slice:":5" %}
+          <img data-toggle="tooltip" data-placement="top" title="@{{f.username}}" src="{{f.avatar}}" class="avatar-mini">
+      {% endfor %}
+      </h3>
+    </div>
+  </div>
+  <div class="d-flex justify-content-center">
+    <div class="card mt-1">
+      <h3><a href="" data-toggle="modal" data-target="#followersModal"> Followers ({{followers_count}}) </a> : 
+      {% for f in followers|slice:":5" %}
+        <img data-toggle="tooltip" data-placement="top" title="@{{f.username}}" src="{{f.avatar}}" class="avatar-mini">
+      {% endfor %}
+      </h3>
+    </div>
+  </div>
+  
+
+    
+
+  {% if request.user.username == user.username %}
+  <div class="d-flex justify-content-center mt-1">
+    <a
+      href=""
+      class="custom-button-2"
+      data-toggle="modal"
+      data-target="#editProfile"
+      >Edit Profile</a
+    >
+  </div>
+  {% endif %}
+</div>
+
+
+
+<div class="mt-4 pb-5 all-post">
+  <h2>Posts by {{user.username}} : </h2>
+  
+      <div class="row">
+      {% for p in post_content %}
+          <div class="post-container card col-md-12 mb-4">
+
+              <p><img data-toggle="tooltip" data-placement="top" title="@{{p.user.username}}" src="{{p.user.avatar}}" class="avatar-mini"><strong> <a href="{% url 'profile' p.user %}">{{p.user}}</a>   </strong> on {{p.pub_date}}</p>
+              
+              <blockquote class="blockquote text-center">
+                  <p class="mb-0 post-content" id="post-content{{p.id}}">{{p.post}}</p>
+              </blockquote>
+
+              <div id="edit-post{{p.id}}" hidden>
+                      <textarea id=text-area{{p.id}} name="edited-post" class="change-text form-control"></textarea>
+                      <div class="d-flex justify-content-center">
+                          <button class="save-change btn btn-sm btn-info mb-2 mt-2" value="{{p.id}}">Save Change</button>
+                      </div>
+              </div>
+
+
+              <div class="d-flex justify-content-between">
+                  <div>
+                      <p>
+                      {% if p.id in liked_post %}
+                          <button style="color: crimson;" class="like btn btn-sm" id="like{{p.id}}" value="{{p.id}}"><i class="bi bi-suit-heart-fill"></i></button>
+                          {% else %}
+                          <button class="like btn btn-sm" id="like{{p.id}}" value="{{p.id}}"><i class="bi bi-suit-heart-fill"></i></button>
+                      {% endif %}
+                      
+
+                      <span class="likeCount" id=like-display-{{p.id}}>{{p.like}}</span> Like |
+                          
+                      <a class="" data-toggle="collapse" href="#collapsecontent{{p.id}}"> Comments </a>                                
+                      </p>
+                  </div>
+                  <div>
+                      {% if p.user == request.user %}
+                      <div class="edit-icon" id="{{p.id}}">
+                          <button class="btn btn-sm btn-warning">
+                              <i class="bi bi-pencil"></i>
+                          </button>
+                      </div> 
+                      {% endif %} 
+                  </div>
+              </div>
+
+              <div class="collapse" id="collapsecontent{{p.id}}">
+                  {% if request.user.username %}
+                  <form action="{% url 'comment' %}" method="post">
+                      {% csrf_token %}
+                      <textarea class="form-control" name="comment" rows="2" placeholder="add comment"></textarea>
+                      <div class="d-flex justify-content-end mb-3">
+                          <input type="text" name="post-id" value="{{p.id}}" hidden>
+                          <input type="text" name="page-num" value="{{request.GET.page}}" hidden>
+                          <input class="custom-button" type="submit" value="Post Comment">
+                      </div>
+                  </form>
+                  {% endif %}
+                  
+                {% for c in comments %}
+                  {% if c.post.id == p.id %}
+                  {% if c.user != p.user %}
+                  <div class="card-comment">
+                      <img data-toggle="tooltip" data-placement="top" title="@{{c.user.username}}" src="{{c.user.avatar}}" class="avatar-mini">
+                      <a href="{% url 'profile' c.user %}">@{{c.user}}</a> on {{c.pub_date}} <br>
+                      {{c.comment}}
+                  </div>
+                  {% else %}
+                  <div class="card-comment-owner">
+                      <img data-toggle="tooltip" data-placement="top" title="@{{c.user.username}}" src="{{c.user.avatar}}" class="avatar-mini">
+                      <a href="{% url 'profile' c.user %}">@{{c.user}}</a> on {{c.pub_date}} <br>
+                      {{c.comment}}
+                  </div>
+                  {% endif %}
+                  {% endif %}
+                {% endfor %}
+
+              </div>
+              
+          </div>
+      {% endfor %}
+  </div>
+</div>
+
+{% if request.user.username == user.username %}
+
+<!-- Edit Profile Modal -->
+<div class="modal" id="editProfile">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Edit Profile</h4>
+        <button type="button" class="close" data-dismiss="modal">
+          &times;
+        </button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <form action="{% url 'edit_profile' user.username %}" method="post">
+          {% csrf_token %}
+          <label for="firstName" class="label mt-3">First Name :</label>
+          <input
+            class="form-control"
+            name="firstName"
+            type="text"
+            value="{{user.firstName}}"
+          />
+
+          <label for="lastName" class="label mt-3">Last Name :</label>
+          <input
+            class="form-control"
+            name="lastName"
+            type="text"
+            value="{{user.lastName}}"
+          />
+
+          <label for="job" class="label mt-3">Current Job :</label>
+          <input
+            class="form-control"
+            name="job"
+            type="text"
+            value="{{user.job}}"
+          />
+
+          <label for="about" class="label mt-3">About Me :</label>
+          <input
+            class="form-control"
+            name="about"
+            type="text"
+            value="{{user.about}}"
+          />
+
+          <label for="education" class="label mt-3">Education :</label>
+          <input
+            class="form-control"
+            name="education"
+            type="text"
+            value="{{user.education}}"
+          />
+
+          <label for="avatar" class="label mt-3">Avatar :</label>
+          <input
+            class="form-control"
+            name="avatar"
+            type="text"
+            value="{{user.avatar}}"
+            placeholder="Insert picture url here"
+          />
+
+          <input
+            class="custom-button-2 mt-4"
+            type="submit"
+            value="Save Change"
+          />
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endif %}
+
+<!-- Followers Modal -->
+<div class="modal" id="followersModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Followers</h4>
+        <button type="button" class="close" data-dismiss="modal">
+          &times;
+        </button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <ul class="list-group list-group-flush">
+          {% for f in followers %}
+            <li  class="list-group-item"> <img class="avatar" src="{{f.avatar}}" alt="Avatar"> <a href="{% url 'profile' f.username %}">{{ f }}</a>  | {{f.job}}</li>
+          {% empty %}
+            <h2>No Follower</h2>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Followings Modal -->
+<div class="modal" id="followingsModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Followings</h4>
+        <button type="button" class="close" data-dismiss="modal">
+          &times;
+        </button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <ul class="list-group list-group-flush">
+          {% for f in followings_list.following.all %}
+            <li  class="list-group-item"> <img class="avatar" src="{{f.avatar}}" alt="Avatar"> <a href="{% url 'profile' f.username %}">{{ f }}</a>  | {{f.job}}</li>
+          {% empty %}
+            <h2>No Folllowings</h2>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+{% endblock %}

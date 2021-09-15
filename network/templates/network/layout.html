@@ -1,49 +1,345 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>{% block title %}Social Network{% endblock %}</title>
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-        <link href="{% static 'network/styles.css' %}" rel="stylesheet">
-    </head>
-    <body>
+  <head>
+    <title>{% block title %}Social Network{% endblock %}</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+      crossorigin="anonymous"
+    />
+    <link href="{% static 'network/styles.css' %}" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+    
 
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <a class="navbar-brand" href="#">Network</a>
-          
-            <div>
-              <ul class="navbar-nav mr-auto">
-                {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="#"><strong>{{ user.username }}</strong></a>
-                    </li>
-                {% endif %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'index' %}">All Posts</a>
-                </li>
-                {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Following</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
-                    </li>
-                {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Log In</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'register' %}">Register</a>
-                    </li>
-                {% endif %}
-              </ul>
-            </div>
-          </nav>
-        
-        <div class="body">
-            {% block body %}
-            {% endblock %}
+    <style>
+      h2 {
+        color: #ecf0f1;
+      }
+
+      .avatar {
+        vertical-align: middle;
+        width: 55px;
+        height: 55px;
+        margin-right: 1rem;
+        border-radius: 80%;
+      }
+
+      .avatar-mini {
+        vertical-align: middle;
+        width: 45px;
+        height: auto;
+        margin-right: 2px;
+        border-radius: 40%;
+      }
+
+      .body {
+        background-color: #786fa6;
+        padding-bottom: 4rem;
+      }
+
+      .custom-button {
+        background-color: #303952; /* Green */
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        -webkit-transition-duration: 0.4s; /* Safari */
+        transition-duration: 0.4s;
+      }
+
+      .custom-button-2 {
+        background-color: #f5cd79;
+        border: none;
+        color: rgb(29, 28, 28);
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        -webkit-transition-duration: 0.4s; /* Safari */
+        transition-duration: 0.4s;
+      }
+
+      .custom-button-2:hover {
+        box-shadow: 0 8px 9px 0 rgba(0, 0, 0, 0.24),
+          0 17px 50px 0 rgba(0, 0, 0, 0.19);
+      }
+
+      .custom-button:hover {
+        box-shadow: 0 8px 9px 0 rgba(0, 0, 0, 0.24),
+          0 17px 50px 0 rgba(0, 0, 0, 0.19);
+      }
+
+      .new-post {
+        margin-left: 1rem;
+        margin-top: 1rem;
+        margin-right: 1rem;
+        padding-top: 2rem;
+        padding-bottom: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+
+      .post-button {
+        margin-top: 0.5rem;
+      }
+
+      .custom-container {
+        padding-top: 2rem;
+        padding-left: 10rem;
+        padding-right: 10rem;
+      }
+
+      .card {
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+        transition: 0.3s;
+        width: 50%;
+        padding: 1rem 1rem;
+      }
+
+      .card-comment {
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+        transition: 0.3s;
+        width: 100%;
+        padding: 1rem 1rem;
+        background-color: #f5f6fa;
+      }
+
+      .card-comment-owner {
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+        transition: 0.3s;
+        width: 100%;
+        padding: 1rem 1rem;
+        background-color: #f6e58d;
+      }
+
+      .card:hover {
+        box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="body">
+      <div class="container pt-5">
+        <div class="menu d-flex justify-content-center">
+          <a href="{% url 'index' 'all' %}" class="custom-button">All Post</a>
+          {% if request.user.username %}
+          <a href="{% url 'index' 'follow' %}" class="custom-button">Following</a>
+          <a
+            href="{% url 'profile' request.user.username %}"
+            class="custom-button"
+            >{{request.user.username}} Profile</a
+          >
+          <a
+            href="{% url 'logout' %}"
+            class="custom-button"
+            style="background-color: #e15f41"
+            >Log Out</a
+          >
+          {% else %}
+          <a href="{% url 'login' %}" class="custom-button">Login</a>
+          <a href="{% url 'register' %}" class="custom-button">Register</a>
+          {% endif %}
         </div>
-    </body>
+        {% block body %} {% endblock %}
+      </div>
+
+      <!-- footer -->
+      <div class="menu d-flex justify-content-center" style="margin-top: 6rem;">
+        <div style="color: azure">
+          <p>
+              <hr>
+            <em
+              >Made with
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                fill="currentColor"
+                class="bi bi-heart"
+                viewBox="0 0 16 16"
+              >
+                <path
+                  d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"
+                />
+              </svg>
+              By Agung
+            </em>
+          </p>
+        </div>
+      </div>
+
+      <!-- end of footer -->
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+      $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+      })
+
+      let CSRF_TOKEN = '{{csrf_token}}'
+      let alleditIcon = document.querySelectorAll(".edit-icon");
+      let allpost = document.querySelectorAll(".post-content");
+      let totalEditIcon = alleditIcon.length;
+      let totalPost = allpost.length;
+      let like = document.getElementsByClassName("like")
+      let totalLike = like.length
+      let likeCount = document.getElementsByClassName("likeCount")
+      let saveChangeBtn = document.getElementsByClassName("save-change")
+     
+
+      // add listener to all change button
+      for (let i = 0; i < saveChangeBtn.length; i++){
+        saveChangeBtn[i].addEventListener("click", function() {
+          console.log(saveChangeBtn[i].value)
+          postId = saveChangeBtn[i].value
+          changedText = document.getElementById("text-area"+postId)
+          // fetch post data
+          fetch("{% url 'edit_post_with_ajax' %}", {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers:{
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest', //Necessary to work with request.is_ajax()
+                'X-CSRFToken': CSRF_TOKEN,
+            },
+                body: JSON.stringify({
+                  'id': postId,
+                  'text': changedText.value
+                }) //JavaScript object of data to POST
+            })
+            .then(response => {
+                  return response.json() //Convert response to JSON
+                  
+            })
+            .then(data => {
+              console.log(data)
+              post = document.getElementById("post-content"+postId)
+              post.innerHTML = changedText.value
+              editForm = document.getElementById("edit-post"+postId)
+              editForm.hidden = true
+              post.hidden = false
+
+            //Perform actions with the response data from the view
+
+            })
+        })
+      }
+
+      for (let i = 0; i < totalEditIcon; i++){
+        alleditIcon[i].addEventListener("click", function() {
+          let postId = parseInt(alleditIcon[i].id) 
+          post = document.getElementById("post-content"+postId)
+          editForm = document.getElementById("edit-post"+postId)
+          textarea = document.getElementById("text-area"+postId)
+          post.hidden = true;
+          editForm.removeAttribute("hidden")
+          textarea.innerHTML = post.innerHTML
+
+
+        })
+      }
+
+      for (let i = 0 ; i < totalLike; i++){
+        like[i].addEventListener("click", function() {
+          let postId = like[i].value
+          fetch("{% url 'like' %}", {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers:{
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest', //Necessary to work with request.is_ajax()
+                'X-CSRFToken': CSRF_TOKEN,
+            },
+                body: JSON.stringify({
+                  'id': postId,
+                }) //JavaScript object of data to POST
+            })
+            .then(response => {
+                  return response.json() //Convert response to JSON
+                  
+            })
+            .then(data => {
+              console.log(data)
+              if (data.like == "tercatat"){
+                like[i].setAttribute("style", "color: red")
+              }else{
+                like[i].setAttribute("style", "color: black")
+              }
+            //Perform actions with the response data from the view
+            //like updator one page
+              likeCount[i].innerHTML = data.totalLike
+            })
+        })
+      }
+
+
+      let followButton = document.getElementById("follow-button")
+      let unfollow = document.getElementById("unfollow")
+
+      followButton.addEventListener("click", function (){
+        fetch("{% url 'follow_with_ajax' %}", {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers:{
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest', //Necessary to work with request.is_ajax()
+              'X-CSRFToken': CSRF_TOKEN,
+          },
+              body: JSON.stringify({
+                'person': followButton.value,
+                'type': 'follow'
+              }) //JavaScript object of data to POST
+          })
+          .then(response => {
+                return response.json() //Convert response to JSON
+                
+          })
+          .then(data => {
+            console.log(data)
+            location.reload();
+          })
+      })
+
+      unfollow.addEventListener("click", function (){
+        fetch("{% url 'follow_with_ajax' %}", {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers:{
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest', //Necessary to work with request.is_ajax()
+              'X-CSRFToken': CSRF_TOKEN,
+          },
+              body: JSON.stringify({
+                'person': followButton.value,
+                'type': 'unfollow'
+              }) //JavaScript object of data to POST
+          })
+          .then(response => {
+                return response.json() //Convert response to JSON
+                
+          })
+          .then(data => {
+            console.log(data)
+            location.reload();
+
+          })
+      })
+
+
+    </script>
+
+  </body>
 </html>
